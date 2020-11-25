@@ -30,6 +30,12 @@ pointclouds.plotly(0).show()
 
 ## Installation
 
+```
+conda create --name gradslam python=3.7
+conda activate gradslam
+conda install pytorch torchvision cudatoolkit=11.0 -c pytorch
+pip install -r requirements.txt
+```
 ### Requirements
 - `pytorch>=1.6.0` (for other pytorch versions see [here](#install-from-local-clone-recommended))
 
