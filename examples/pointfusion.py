@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
-
+import os
 import open3d as o3d
 import torch
 from torch.utils.data import DataLoader
@@ -11,18 +11,18 @@ from gradslam.structures.rgbdimages import RGBDImages
 
 parser = ArgumentParser(formatter_class=RawTextHelpFormatter)
 parser.add_argument(
-    "--dataset",
+    "dataset",
     type=str,
-    required=True,
     choices=["icl", "tum"],
+    default='icl',
     help="Dataset to use. Supported options:\n"
     " icl = Ground Truth odometry\n"
     " tum = Iterative Closest Point\n",
 )
 parser.add_argument(
-    "--dataset_path",
+    "dataset_path",
     type=str,
-    required=True,
+    default='/data/ICL/',
     help="Path to the dataset directory",
 )
 parser.add_argument(
@@ -59,3 +59,18 @@ if __name__ == "__main__":
     # visualization
     o3d.visualization.draw_geometries([pointclouds.open3d(0)])
     o3d.visualization.draw_geometries([pointclouds.open3d(1)])
+    # vis = o3d.visualization.Visualizer()
+    # # vis.create_window()
+    # os.makedirs('cache/',exist_ok=True)
+    # for i in range(2):
+    #     pcd=pointclouds.open3d(i)
+    #     path=f'cache/{i}.png'
+    #     vis.add_geometry(pcd)
+    #     # Updates
+    #     vis.update_geometry(pcd)
+    #     vis.poll_events()
+    #     vis.update_renderer()
+    #     vis.capture_screen_image(path)
+    #     # Remove previous geometry
+    #     vis.remove_geometry(pcd)
+    # vis.destroy_window()
