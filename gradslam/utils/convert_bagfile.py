@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 import argparse
 import os
-
+# from mmcv import ProgressBar
 
 def parse_args():
     # Create object for parsing command-line options
@@ -29,10 +29,8 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Check if the given file have bag extension
-    if os.path.isfile(args.input) and os.path.splitext(args.input)[1] != ".bag":
-        print("The given file is not of correct file format.")
-        print("Only .bag files are accepted")
-        exit()
+    assert os.path.isfile(args.input), f'file {args.input} does not exit' 
+    assert os.path.splitext(args.input)[1] == ".bag", "Only .bag files are accepted"
 
     # Create pipeline
     pipeline = rs.pipeline()
@@ -42,14 +40,12 @@ if __name__ == "__main__":
     # Tell config that we will use a recorded device from filem to be used by the pipeline through playback.
     rs.config.enable_device_from_file(config, args.input)
     # Configure the pipeline to stream the depth stream
-    config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
+    config.enable_stream(rs.stream.depth, 1024, 768, rs.format.z16, 30)
+    # config.enable_stream(rs.stream.color, 1280, 720, rs.format.rgb8, 30)
 
     # Start streaming from file
     pipeline.start(config)
 
-    # Create opencv window to render image in
-    cv2.namedWindow("Depth Stream", cv2.WINDOW_AUTOSIZE)
-    
     # Create colorizer object
     colorizer = rs.colorizer()
 
@@ -57,6 +53,13 @@ if __name__ == "__main__":
     frame_i=0
     if args.outdir:
         os.makedirs(args.outdir,exist_ok=True)
+    
+    # Create opencv window to render image in
+    if args.show:
+        cv2.namedWindow("Depth Stream", cv2.WINDOW_AUTOSIZE)
+
+    
+    # progress = ProgressBar(task_num=args.num_frames if args.num_frames else 1e5)
     while True:
         # Get frameset of depth
         frames = pipeline.wait_for_frames()
@@ -64,12 +67,13 @@ if __name__ == "__main__":
         # Get depth frame
         depth_frame = frames.get_depth_frame()
 
+        
         # Colorize depth frame to jet colormap
         depth_color_frame = colorizer.colorize(depth_frame)
 
         # Convert depth_frame to numpy array to render image in opencv
         depth_color_image = np.asanyarray(depth_color_frame.get_data())
-
+        print(frame_i, depth_color_image.max())
         if args.outdir:
             filename=os.path.join(args.outdir,f'{frame_i}.png')
             cv2.imwrite(filename,depth_color_image)
@@ -83,6 +87,7 @@ if __name__ == "__main__":
                 cv2.destroyAllWindows()
                 break
 
-            frame_i+=1
-            if args.num_frames and frame_i > args.num_frames:
-                break
+        frame_i+=1
+        if args.num_frames and frame_i > args.num_frames:
+            break
+        # progress.update()
