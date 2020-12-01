@@ -65,7 +65,7 @@ def setup_pipeline(args):
     elif args.rgb_resolution=='fhd':
         config.enable_stream(rs.stream.color, 1920, 1080, color_mode, 30)
     else:
-        config.enable_stream(rs.stream.color, 960, 540, color_mode, 30)
+        config.enable_stream(rs.stream.color, 640, 480, color_mode, 30)
 
     # Start streaming from file
     try:
@@ -103,8 +103,7 @@ if __name__ == "__main__":
 
     # Streaming loop
     frame_i=0
-    # progress = ProgressBar(task_num=args.num_frames if args.num_frames else 1e3)
-    progress = ProgressBar(task_num=1e1)
+    progress = ProgressBar(task_num=args.num_frames if args.num_frames else 1e3)
     while True:
         frames = pipeline.wait_for_frames()
 
@@ -145,7 +144,7 @@ if __name__ == "__main__":
             images = np.hstack((bg_removed, depth_colormap))
             cv2.namedWindow('Align Example', cv2.WINDOW_AUTOSIZE)
             cv2.imshow('Align Example', images)
-            key = cv2.waitKey(1000)
+            key = cv2.waitKey(200)
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
                 cv2.destroyAllWindows()
@@ -154,7 +153,7 @@ if __name__ == "__main__":
         frame_i+=1
         if args.num_frames and frame_i > args.num_frames:
             break
-        if frame_i % 1e1 == 0:
+        if frame_i % 1e3 == 0:
             # Reset progress bar
             progress.completed=0
             progress.file.flush()
