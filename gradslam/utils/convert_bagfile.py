@@ -52,20 +52,27 @@ def setup_pipeline(args):
     # Tell config that we will use a recorded device from filem to be used by the pipeline through playback.
     rs.config.enable_device_from_file(config, args.input)
     # Configure the pipeline to stream the depth & color 
-    if args.depth_resolution=='vga':
-        config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    elif args.depth_resolution=='xga':
-        config.enable_stream(rs.stream.depth, 1024, 768, rs.format.z16, 30)
-    else:
-        config.enable_stream(rs.stream.depth, 320, 240, rs.format.z16, 30)
+    # if args.depth_resolution=='vga':
+    #     config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    # elif args.depth_resolution=='xga':
+    #     config.enable_stream(rs.stream.depth, 1024, 768, rs.format.z16, 30)
+    # else:
+    #     config.enable_stream(rs.stream.depth, 320, 240, rs.format.z16, 30)
     
     color_mode= rs.format.rgb8 if args.color_mode=='rgb8' else rs.format.bgr8
-    if args.rgb_resolution=='hd':
-        config.enable_stream(rs.stream.color, 1280, 720, color_mode, 30)
-    elif args.rgb_resolution=='fhd':
-        config.enable_stream(rs.stream.color, 1920, 1080, color_mode, 30)
-    else:
-        config.enable_stream(rs.stream.color, 960, 540, color_mode, 30)
+    # if args.rgb_resolution=='hd':
+    #     config.enable_stream(rs.stream.color, 1280, 720, color_mode, 30)
+    # elif args.rgb_resolution=='fhd':
+    #     config.enable_stream(rs.stream.color, 1920, 1080, color_mode, 30)
+    # else:
+    #     config.enable_stream(rs.stream.color, 960, 540, color_mode, 30)
+
+
+    # config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    # config.enable_stream(rs.stream.color, 320, 240, color_mode, 30)
+
+    config.enable_stream(rs.stream.depth, 320, 240, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, 640, 480, color_mode, 30)
 
     # Start streaming from file
     try:
@@ -81,7 +88,6 @@ def setup_pipeline(args):
         depth_scale = depth_sensor.get_depth_scale()
         print("Depth Scale is: " , depth_scale)
         clipping_distance = args.clipping_distance_in_meters / depth_scale
-    
     # Create an align object
     align_to = rs.stream.depth if args.align=='to_depth' else rs.stream.color
     align = rs.align(align_to)
