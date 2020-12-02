@@ -26,7 +26,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     icl_path = args.icl_path
-    dataset = ICL(icl_path, seqlen=args.seqlen, width=args.width, height=args.height)
+    dataset = ICL(icl_path, seqlen=args.seqlen, width=args.width, height=args.height, return_pose=False, return_transform=False)
     loader = DataLoader(dataset=dataset, batch_size=args.batch_size)
 
     colors, depths, intrinsics, poses, *_ = next(iter(loader))

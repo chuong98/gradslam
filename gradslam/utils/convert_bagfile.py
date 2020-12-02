@@ -17,10 +17,10 @@ def parse_args():
                                     Remember to change the stream resolution, fps and format to match the recorded.")
     # Add argument which takes path to a bag file as an input
     parser.add_argument("input", type=str, help="Path to the bag file. Set to None to get from Camera")
-    parser.add_argument("--depth-resolution", choices=['low','vga', 'xga'], default='xga', 
+    parser.add_argument("--depth-resolution", choices=['qvga','vga', 'xga', 'hd', 'fhd'], default='xga', 
                         help="Depth resolution: low(320x240), vga(640x480), xga (1024x768).\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
-    parser.add_argument("--rgb-resolution", choices=['vga','hd', 'fhd'], default='hd', 
+    parser.add_argument("--rgb-resolution", choices=['qvga','vga', 'xga', 'hd', 'fhd'], default='hd', 
                         help="RGB resolution: vga(960x540), hd(1280x720), fhd(1920x1080).\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
     parser.add_argument("--color-mode", choices=['rgb8','bgr8'], default='rgb8', 
@@ -34,6 +34,7 @@ def parse_args():
     parser.add_argument("--num_frames", type=int, default=None, 
                         help="Number of frames to stream. Will stream all data if None.")
     parser.add_argument("--outdir", type=str, default=None, help="Output directory")
+    parser.add_argument("--trajectory", type=str, default=0, help="Trajectory number")
     parser.add_argument("--show", action='store_true', help='show the video')
 
     # Parse the command line arguments to an object
@@ -52,27 +53,20 @@ def setup_pipeline(args):
     # Tell config that we will use a recorded device from filem to be used by the pipeline through playback.
     rs.config.enable_device_from_file(config, args.input)
     # Configure the pipeline to stream the depth & color 
-    # if args.depth_resolution=='vga':
-    #     config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    # elif args.depth_resolution=='xga':
-    #     config.enable_stream(rs.stream.depth, 1024, 768, rs.format.z16, 30)
-    # else:
-    #     config.enable_stream(rs.stream.depth, 320, 240, rs.format.z16, 30)
-    
-    color_mode= rs.format.rgb8 if args.color_mode=='rgb8' else rs.format.bgr8
-    # if args.rgb_resolution=='hd':
-    #     config.enable_stream(rs.stream.color, 1280, 720, color_mode, 30)
-    # elif args.rgb_resolution=='fhd':
-    #     config.enable_stream(rs.stream.color, 1920, 1080, color_mode, 30)
-    # else:
-    #     config.enable_stream(rs.stream.color, 960, 540, color_mode, 30)
+    resolution = {
+        'qvga':(320, 240),
+        'vga':(640, 480),
+        'xga':(1024, 768),
+        'hd':(1280, 720),
+        'fhd':(1920, 1080)
+    }
 
+    depth_resolution = resolution[args.depth_resolution]
+    rgb_resolution = resolution[args.rgb_resolution]
 
-    # config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    # config.enable_stream(rs.stream.color, 320, 240, color_mode, 30)
-
-    config.enable_stream(rs.stream.depth, 320, 240, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, 640, 480, color_mode, 30)
+    config.enable_stream(rs.stream.depth, depth_resolution[0], depth_resolution[1], rs.format.z16, 30)
+    color_mode = rs.format.rgb8 if args.color_mode=='rgb8' else rs.format.bgr8
+    config.enable_stream(rs.stream.color, rgb_resolution[0], rgb_resolution[1], color_mode, 30)
 
     # Start streaming from file
     try:
@@ -101,11 +95,17 @@ if __name__ == "__main__":
     pipeline, align, clipping_distance = setup_pipeline(args)
 
     if args.outdir:
-        if os.path.exists(args.outdir):
-            shutil.rmtree(args.outdir)
-        os.makedirs(args.outdir,exist_ok=True)
-        os.makedirs(os.path.join(args.outdir,'Depth'),exist_ok=True)
-        os.makedirs(os.path.join(args.outdir,'RGB'),exist_ok=True)
+        if not os.path.exists(args.outdir):
+            os.makedirs(args.outdir,exist_ok=True)
+
+        datadir = os.path.join(args.outdir, 'living_room_traj' + args.trajectory + '_frei_png')
+        if os.path.exists(datadir):
+            shutil.rmtree(datadir)
+
+        os.makedirs(datadir,exist_ok=True)
+        os.makedirs(os.path.join(datadir,'depth'),exist_ok=True)
+        os.makedirs(os.path.join(datadir,'rgb'),exist_ok=True)
+        associations = open(os.path.join(datadir,'associations.txt'), 'w+')
 
     # Streaming loop
     frame_i=0
@@ -127,15 +127,15 @@ if __name__ == "__main__":
         color_image = np.asanyarray(color_frame.get_data())
         if args.color_mode=='rgb8':
             color_image = cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR)
-        if args.outdir:
-            filename_depth=os.path.join(args.outdir,f'Depth/{frame_i}.png')
-            filename_rgb=os.path.join(args.outdir,f'RGB/{frame_i}.png')
+        if datadir:
+            filename_depth=os.path.join(datadir,f'depth/{frame_i}.png')
+            filename_rgb=os.path.join(datadir,f'rgb/{frame_i}.png')
             cv2.imwrite(filename_depth,depth_image)
             cv2.imwrite(filename_rgb,color_image)
+            associations.write(str(frame_i) + ' depth/' + str(frame_i) + '.png ' + str(frame_i) + ' rgb/' + str(frame_i) + '.png\n')
             # import pdb; pdb.set_trace()
             # check_depth=cv2.imread(filename_depth,cv2.IMREAD_UNCHANGED)
             # print((depth_image-check_depth).abs().sum())
-
 
         if args.show:
             # Remove background - Set pixels further than clipping_distance to grey
@@ -165,3 +165,5 @@ if __name__ == "__main__":
             progress.completed=0
             progress.file.flush()
         progress.update()
+
+    associations.close()
