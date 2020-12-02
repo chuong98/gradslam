@@ -17,11 +17,11 @@ def parse_args():
                                     Remember to change the stream resolution, fps and format to match the recorded.")
     # Add argument which takes path to a bag file as an input
     parser.add_argument("input", type=str, help="Path to the bag file. Set to None to get from Camera")
-    parser.add_argument("--depth-resolution", choices=['qvga','vga', 'xga', 'hd', 'fhd'], default='xga', 
-                        help="Depth resolution: low(320x240), vga(640x480), xga (1024x768).\
+    parser.add_argument("--depth-resolution", choices=['qvga','vga', 'xga'], default='xga', 
+                        help="Depth resolution: qvga(320x240), vga(640x480), xga (1024x768).\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
-    parser.add_argument("--rgb-resolution", choices=['qvga','vga', 'xga', 'hd', 'fhd'], default='hd', 
-                        help="RGB resolution: vga(960x540), hd(1280x720), fhd(1920x1080).\
+    parser.add_argument("--rgb-resolution", choices=['vga', 'xga', 'hd', 'fhd'], default='hd', 
+                        help="RGB resolution: vga(960x540), xga(1024x768), hd(1280x720), fhd(1920x1080).\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
     parser.add_argument("--color-mode", choices=['rgb8','bgr8'], default='rgb8', 
                         help="The color mode when collecting data.\
