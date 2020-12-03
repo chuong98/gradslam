@@ -7,7 +7,7 @@ import torch
 from numpy.testing import assert_allclose as np_assert_allclose
 from torch.testing import assert_allclose
 
-from gradslam.datasets.datautils import *
+from gradslam.datasets.data_utils import *
 
 
 class TestDataUtils(unittest.TestCase):

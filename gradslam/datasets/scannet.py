@@ -11,7 +11,7 @@ from gradslam.core.geometry.geometryutils import relative_transformation
 from natsort import natsorted
 from torch.utils import data
 
-from . import datautils
+from . import data_utils
 
 __all__ = ["Scannet"]
 
@@ -272,7 +272,7 @@ class Scannet(data.Dataset):
             output.append(pose_seq)
 
         if self.return_transform:
-            transform_seq = datautils.poses_to_transforms(poses)
+            transform_seq = data_utils.poses_to_transforms(poses)
             transform_seq = [torch.from_numpy(x).float() for x in transform_seq]
             transform_seq = torch.stack(transform_seq, 0).float()
             output.append(transform_seq)
@@ -304,9 +304,9 @@ class Scannet(data.Dataset):
             color, (self.width, self.height), interpolation=cv2.INTER_LINEAR
         )
         if self.normalize_color:
-            color = datautils.normalize_image(color)
+            color = data_utils.normalize_image(color)
         if self.channels_first:
-            color = datautils.channels_first(color)
+            color = data_utils.channels_first(color)
         return color
 
     def _preprocess_depth(self, depth: np.ndarray):
@@ -330,7 +330,7 @@ class Scannet(data.Dataset):
         )
         depth = np.expand_dims(depth, -1)
         if self.channels_first:
-            depth = datautils.channels_first(depth)
+            depth = data_utils.channels_first(depth)
         return depth / self.scaling_factor
 
     def _preprocess_intrinsics(self, intrinsics: Union[torch.Tensor, np.ndarray]):
@@ -347,7 +347,7 @@ class Scannet(data.Dataset):
             - intrinsics: :math:`(4, 4)`
             - Output: :math:`(1, 4, 4)`
         """
-        scaled_intrinsics = datautils.scale_intrinsics(
+        scaled_intrinsics = data_utils.scale_intrinsics(
             intrinsics, self.height_downsample_ratio, self.width_downsample_ratio
         )
         if torch.is_tensor(scaled_intrinsics):

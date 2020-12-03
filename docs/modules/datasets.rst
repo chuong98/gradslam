@@ -22,7 +22,7 @@ gradslam.datasets.tum
 	:members:
 
 
-gradslam.datasets.datautils
+gradslam.datasets.data_utils
 -------------------------------
 .. autofunction:: normalize_image
 .. autofunction:: channels_first

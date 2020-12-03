@@ -8,7 +8,7 @@ import torch
 from torch.testing import assert_allclose
 from torch.utils.data import DataLoader
 
-import gradslam.datasets.datautils as datautils
+import gradslam.datasets.data_utils as data_utils
 from gradslam.datasets.scannet import Scannet
 
 SCANNET_ROOT = "D:/Soroush-LFS/datasets/ScanNet-gradSLAM/extractions/scans"
@@ -571,7 +571,7 @@ class TestScannet(unittest.TestCase):
         label_sample = labels[0].contiguous().detach().cpu().numpy().astype(np.uint8)
         encoding_list = dataset.color_encoding
         encoding_list = [v for _, v in encoding_list.items()]
-        label_image = datautils.create_label_image(
+        label_image = data_utils.create_label_image(
             label_sample[0].squeeze(), encoding_list
         )
 
@@ -590,7 +590,7 @@ class TestScannet(unittest.TestCase):
         label_sample = labels[0].contiguous().detach().cpu().numpy().astype(np.uint8)
         encoding_list = dataset.color_encoding
         encoding_list = [v for _, v in encoding_list.items()]
-        label_image = datautils.create_label_image(
+        label_image = data_utils.create_label_image(
             label_sample[0].squeeze(), encoding_list
         )
 
@@ -635,10 +635,10 @@ class TestScannet(unittest.TestCase):
 
     def test_channels_first(self):
         a = np.random.randn(480, 640, 3)
-        self.assertEqual(datautils.channels_first(a).shape, (3, 480, 640))
+        self.assertEqual(data_utils.channels_first(a).shape, (3, 480, 640))
 
         a = np.random.randn(12, 5, 480, 640, 3)
-        self.assertEqual(datautils.channels_first(a).shape, (12, 5, 3, 480, 640))
+        self.assertEqual(data_utils.channels_first(a).shape, (12, 5, 3, 480, 640))
 
     @pytest.mark.skipif(not Path(SCANNET_ROOT).exists(), reason=SCANNET_NOT_FOUND)
     @pytest.mark.skipif(

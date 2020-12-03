@@ -9,11 +9,10 @@ import torch
 from gradslam.core.geometry.geometryutils import relative_transformation
 from torch.utils import data
 
-from . import datautils
+from . import data_utils
 
-__all__ = ["ICL"]
-
-
+from .builder import DATASETS
+@DATASETS.register_module()
 class ICL(data.Dataset):
     r"""A torch Dataset for loading in `the ICL-NUIM dataset <https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html>`_.
     Will fetch sequences of rgb images, depth maps, intrinsics matrix, poses, frame to frame relative transformations
@@ -379,7 +378,7 @@ class ICL(data.Dataset):
         intrinsics = torch.tensor(
             [[481.20, 0, 319.5, 0], [0, -480.0, 239.5, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
         ).float()
-        self.intrinsics = datautils.scale_intrinsics(
+        self.intrinsics = data_utils.scale_intrinsics(
             intrinsics, self.height_downsample_ratio, self.width_downsample_ratio
         ).unsqueeze(0)
 
@@ -455,7 +454,7 @@ class ICL(data.Dataset):
             output.append(pose_seq)
 
         if self.return_transform:
-            transform_seq = datautils.poses_to_transforms(poses)
+            transform_seq = data_utils.poses_to_transforms(poses)
             transform_seq = [torch.from_numpy(x).float() for x in transform_seq]
             transform_seq = torch.stack(transform_seq, 0).float()
             output.append(transform_seq)
@@ -483,9 +482,9 @@ class ICL(data.Dataset):
             color, (self.width, self.height), interpolation=cv2.INTER_LINEAR
         )
         if self.normalize_color:
-            color = datautils.normalize_image(color)
+            color = data_utils.normalize_image(color)
         if self.channels_first:
-            color = datautils.channels_first(color)
+            color = data_utils.channels_first(color)
         return color
 
     def _preprocess_depth(self, depth: np.ndarray):
@@ -509,7 +508,7 @@ class ICL(data.Dataset):
         )
         depth = np.expand_dims(depth, -1)
         if self.channels_first:
-            depth = datautils.channels_first(depth)
+            depth = data_utils.channels_first(depth)
         return depth / self.scaling_factor
 
     def _preprocess_poses(self, poses: torch.Tensor):

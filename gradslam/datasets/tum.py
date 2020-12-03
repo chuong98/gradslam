@@ -8,7 +8,7 @@ import torch
 from gradslam.core.geometry.geometryutils import relative_transformation
 from torch.utils import data
 
-from . import datautils
+from . import data_utils
 from . import tumutils
 
 __all__ = ["TUM"]
@@ -338,7 +338,7 @@ class TUM(data.Dataset):
         intrinsics = torch.tensor(
             [[525.0, 0, 319.5, 0], [0, 525.0, 239.5, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
         ).float()
-        self.intrinsics = datautils.scale_intrinsics(
+        self.intrinsics = data_utils.scale_intrinsics(
             intrinsics, self.height_downsample_ratio, self.width_downsample_ratio
         ).unsqueeze(0)
 
@@ -417,7 +417,7 @@ class TUM(data.Dataset):
             output.append(pose_seq)
 
         if self.return_transform:
-            transform_seq = datautils.poses_to_transforms(poses)
+            transform_seq = data_utils.poses_to_transforms(poses)
             transform_seq = [torch.from_numpy(x).float() for x in transform_seq]
             transform_seq = torch.stack(transform_seq, 0).float()
             output.append(transform_seq)
@@ -451,9 +451,9 @@ class TUM(data.Dataset):
             color, (self.width, self.height), interpolation=cv2.INTER_LINEAR
         )
         if self.normalize_color:
-            color = datautils.normalize_image(color)
+            color = data_utils.normalize_image(color)
         if self.channels_first:
-            color = datautils.channels_first(color)
+            color = data_utils.channels_first(color)
         return color
 
     def _preprocess_depth(self, depth: np.ndarray):
@@ -477,7 +477,7 @@ class TUM(data.Dataset):
         )
         depth = np.expand_dims(depth, -1)
         if self.channels_first:
-            depth = datautils.channels_first(depth)
+            depth = data_utils.channels_first(depth)
         return depth / self.scaling_factor
 
     def _preprocess_poses(self, poses: torch.Tensor):
@@ -510,7 +510,7 @@ class TUM(data.Dataset):
                 has a shape of :math:`(4, 4)`.
         """
         return [
-            datautils.pointquaternion_to_homogeneous(pose)
+            data_utils.pointquaternion_to_homogeneous(pose)
             for pose in poses_point_quaternion
         ]
 
