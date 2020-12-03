@@ -15,7 +15,7 @@ gradslam.slam.pointfusion
 	:members:
 
 
-gradslam.slam.fusionutils
+gradslam.slam.mapping_utils
 -------------------------------
 .. autofunction:: update_map_fusion
 .. autofunction:: update_map_aggregate

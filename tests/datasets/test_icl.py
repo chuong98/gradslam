@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from gradslam.datasets.icl import ICL
 
-ICL_ROOT = "G:/Datasets/ICL"
+ICL_ROOT = "/data/ICL"
 
 # Tests below can only be run if a ICL dataset is available
 ICL_NOT_FOUND = "ICL dataset not found at default location: {}".format(ICL_ROOT)

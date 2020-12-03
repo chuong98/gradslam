@@ -6,32 +6,32 @@ gradslam.odometry
 
 gradslam.odometry.base
 -------------------------------
-.. autoclass:: gradslam.odometry.base.OdometryProvider
+.. autoclass:: gradslam.odometry.base.Odometry
 	:members:
 
 gradslam.odometry.gradicp
 -------------------------------
-.. autoclass:: GradICPOdometryProvider
+.. autoclass:: GradICPOdometry
 	:members:
 
 
 gradslam.odometry.groundtruth
 -------------------------------
-.. autoclass:: GroundTruthOdometryProvider
+.. autoclass:: GroundTruthOdometry
 	:members:
 
 
 gradslam.odometry.icp
 -------------------------------
-.. autoclass:: ICPOdometryProvider
+.. autoclass:: ICPOdometry
 	:members:
 
 
-gradslam.odometry.icputils
+gradslam.odometry.pcl_odom_utils
 -------------------------------
-.. autofunction:: gradslam.odometry.icputils.solve_linear_system
-.. autofunction:: gradslam.odometry.icputils.gauss_newton_solve
-.. autofunction:: gradslam.odometry.icputils.point_to_plane_ICP
-.. autofunction:: gradslam.odometry.icputils.point_to_plane_gradICP
-.. autofunction:: gradslam.odometry.icputils.downsample_pointclouds
-.. autofunction:: gradslam.odometry.icputils.downsample_rgbdimages
+.. autofunction:: gradslam.odometry.pcl_odom_utils.solve_linear_system
+.. autofunction:: gradslam.odometry.pcl_odom_utils.gauss_newton_solve
+.. autofunction:: gradslam.odometry.pcl_odom_utils.point_to_plane_ICP
+.. autofunction:: gradslam.odometry.pcl_odom_utils.point_to_plane_gradICP
+.. autofunction:: gradslam.odometry.pcl_odom_utils.downsample_pointclouds
+.. autofunction:: gradslam.odometry.pcl_odom_utils.downsample_rgbdimages

@@ -4,7 +4,7 @@ from plotly.subplots import make_subplots
 import torch
 
 from .structutils import numpy_to_plotly_image
-from ..geometry.geometryutils import create_meshgrid
+from gradslam.core.geometry.geometryutils import create_meshgrid
 from ..geometry.projutils import inverse_intrinsics
 
 __all__ = ["RGBDImages"]
