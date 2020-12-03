@@ -10,6 +10,7 @@ import argparse
 import os
 import shutil
 from mmcv import ProgressBar
+import mmcv 
 
 def parse_args():
     # Create object for parsing command-line options
@@ -20,18 +21,18 @@ def parse_args():
     parser.add_argument("--depth-resolution", choices=['qvga','vga', 'xga'], default='xga', 
                         help="Depth resolution: qvga(320x240), vga(640x480), xga (1024x768).\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
-    parser.add_argument("--rgb-resolution", choices=['vga', 'xga', 'hd', 'fhd'], default='hd', 
-                        help="RGB resolution: vga(960x540), xga(1024x768), hd(1280x720), fhd(1920x1080).\
+    parser.add_argument("--rgb-resolution", choices=['vga', 'wga', 'xga', 'hd', 'fhd'], default='hd', 
+                        help="RGB resolution: vga(640x480), wga(960x540), xga(1024x768), hd(1280x720), fhd(1920x1080).\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
     parser.add_argument("--color-mode", choices=['rgb8','bgr8'], default='rgb8', 
                         help="The color mode when collecting data.\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")                        
     parser.add_argument("--align", choices=['to_depth','to_color'], default='to_color', 
-                        help="Align Depth and RGB images together: to_depth(RGB is align to Depth image), and vice versa.\
+                        help="Align Depth and RGB images together: to_depth(RGB is aligned to Depth image), and vice versa.\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
     parser.add_argument("--threshold-distance", type=float, default=None, 
-                        help="clipping distance (meter) for visualization. Objects farther than this distance is ignored.")
-    parser.add_argument("--num_frames", type=int, default=None, 
+                        help="clipping distance (meter) for visualization. Objects farther than this distance are ignored.")
+    parser.add_argument("--num-frames", type=int, default=None, 
                         help="Number of frames to stream. Will stream all data if None.")
     parser.add_argument("--outdir", type=str, default=None, help="Output directory")
     parser.add_argument("--trajectory", type=str, default=0, help="Trajectory number")
@@ -40,6 +41,9 @@ def parse_args():
     # Parse the command line arguments to an object
     args = parser.parse_args()
     return args
+
+
+
 
 def setup_pipeline(args):
     # Check if the given file have bag extension
@@ -56,6 +60,7 @@ def setup_pipeline(args):
     resolution = {
         'qvga':(320, 240),
         'vga':(640, 480),
+        'wga':(960, 540),
         'xga':(1024, 768),
         'hd':(1280, 720),
         'fhd':(1920, 1080)
@@ -82,35 +87,50 @@ def setup_pipeline(args):
         depth_scale = depth_sensor.get_depth_scale()
         print("Depth Scale is: " , depth_scale)
         clipping_distance = args.clipping_distance_in_meters / depth_scale
+
     # Create an align object
     align_to = rs.stream.depth if args.align=='to_depth' else rs.stream.color
     align = rs.align(align_to)
 
-    return pipeline, align, clipping_distance
+    # Intrinsic parameters
+    def get_intrinsics(stream_type):
+        sensor_profile = rs.video_stream_profile(profile.get_stream(stream_type))
+        sensor_intrinsics = sensor_profile.get_intrinsics()
+        attr_list=['coeffs','fx','fy','height', 'width', 'ppx','ppy']
+        return {attr:getattr(sensor_intrinsics,attr,'None') for attr in attr_list}
+        
+    intrinsics = get_intrinsics(align_to)
+    color_intrinsics = get_intrinsics(rs.stream.color)
+    depth_intrinsics = get_intrinsics(rs.stream.depth)
+    if args.outdir:
+        mmcv.dump(intrinsics, os.path.join(args.outdir,'intrinsics.json'),)
+        mmcv.dump(color_intrinsics, os.path.join(args.outdir,'color_intrinsics.json'))
+        mmcv.dump(depth_intrinsics, os.path.join(args.outdir,'depth_intrinsics.json'))
+    return pipeline, align, clipping_distance 
 
 if __name__ == "__main__":
     args = parse_args()
 
-    # Setup camera
-    pipeline, align, clipping_distance = setup_pipeline(args)
 
     if args.outdir:
         if not os.path.exists(args.outdir):
             os.makedirs(args.outdir,exist_ok=True)
 
-        datadir = os.path.join(args.outdir, 'living_room_traj' + args.trajectory + '_frei_png')
-        if os.path.exists(datadir):
-            shutil.rmtree(datadir)
+        # args.outdir= os.path.join(args.outdir, 'living_room_traj' + args.trajectory + '_frei_png')
+        if os.path.exists(args.outdir):
+            shutil.rmtree(args.outdir)
 
-        os.makedirs(datadir,exist_ok=True)
-        os.makedirs(os.path.join(datadir,'depth'),exist_ok=True)
-        os.makedirs(os.path.join(datadir,'rgb'),exist_ok=True)
-        associations = open(os.path.join(datadir,'associations.txt'), 'w+')
+        os.makedirs(args.outdir,exist_ok=True)
+        os.makedirs(os.path.join(args.outdir,'depth'),exist_ok=True)
+        os.makedirs(os.path.join(args.outdir,'rgb'),exist_ok=True)
+        associations = open(os.path.join(args.outdir,'associations.txt'), 'w+')
+
+    # Setup camera
+    pipeline, align, clipping_distance = setup_pipeline(args)
 
     # Streaming loop
     frame_i=0
-    # progress = ProgressBar(task_num=args.num_frames if args.num_frames else 1e3)
-    progress = ProgressBar(task_num=1e1)
+    progress = ProgressBar(task_num=args.num_frames if args.num_frames else 1e3)
     while True:
         frames = pipeline.wait_for_frames()
 
@@ -127,9 +147,9 @@ if __name__ == "__main__":
         color_image = np.asanyarray(color_frame.get_data())
         if args.color_mode=='rgb8':
             color_image = cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR)
-        if datadir:
-            filename_depth=os.path.join(datadir,f'depth/{frame_i}.png')
-            filename_rgb=os.path.join(datadir,f'rgb/{frame_i}.png')
+        if args.outdir:
+            filename_depth=os.path.join(args.outdir,f'depth/{frame_i}.png')
+            filename_rgb=os.path.join(args.outdir,f'rgb/{frame_i}.png')
             cv2.imwrite(filename_depth,depth_image)
             cv2.imwrite(filename_rgb,color_image)
             associations.write(str(frame_i) + ' depth/' + str(frame_i) + '.png ' + str(frame_i) + ' rgb/' + str(frame_i) + '.png\n')
