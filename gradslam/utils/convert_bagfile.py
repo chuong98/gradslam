@@ -26,18 +26,17 @@ def parse_args():
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
     parser.add_argument("--color-mode", choices=['rgb8','bgr8'], default='rgb8', 
                         help="The color mode when collecting data.\
-                            If data is loaded from a bag-file, it must be consistent with recording condition.")                        
+                            If data is loaded from a bag-file, it must be consistent with recording condition.")
+    parser.add_argument("--pointcloud", '-pcd', action='store_true', help='extract point cloud (pcd)')                                        
     parser.add_argument("--align", choices=['to_depth','to_color'], default='to_color', 
                         help="Align Depth and RGB images together: to_depth(RGB is aligned to Depth image), and vice versa.\
                             If data is loaded from a bag-file, it must be consistent with recording condition.")
-    parser.add_argument("--threshold-distance", type=float, default=None, 
+    parser.add_argument("--threshold-distance", '-dth', type=float, default=None, 
                         help="clipping distance (meter) for visualization. Objects farther than this distance are ignored.")
-    parser.add_argument("--num-frames", type=int, default=None, 
+    parser.add_argument("--num-frames", '-nf', type=int, default=None, 
                         help="Number of frames to stream. Will stream all data if None.")
     parser.add_argument("--outdir", type=str, default=None, help="Output directory")
-    parser.add_argument("--trajectory", type=str, default=0, help="Trajectory number")
     parser.add_argument("--show", action='store_true', help='show the video')
-
     # Parse the command line arguments to an object
     args = parser.parse_args()
     return args
@@ -123,10 +122,12 @@ if __name__ == "__main__":
         os.makedirs(args.outdir,exist_ok=True)
         os.makedirs(os.path.join(args.outdir,'depth'),exist_ok=True)
         os.makedirs(os.path.join(args.outdir,'rgb'),exist_ok=True)
+        os.makedirs(os.path.join(args.outdir,'pcd'),exist_ok=True)
         associations = open(os.path.join(args.outdir,'associations.txt'), 'w+')
 
     # Setup camera
     pipeline, align, clipping_distance = setup_pipeline(args)
+    pc = rs.pointcloud()
 
     # Streaming loop
     frame_i=0
@@ -138,13 +139,20 @@ if __name__ == "__main__":
         aligned_frames = align.process(frames)
         depth_frame = aligned_frames.get_depth_frame() 
         color_frame = aligned_frames.get_color_frame()
-
+        
         if not depth_frame or not color_frame:
             continue
 
         # Convert images to numpy arrays
         depth_image = np.asanyarray(depth_frame.get_data())
         color_image = np.asanyarray(color_frame.get_data())
+
+        if args.pointcloud:
+            # convert depth to point cloud
+            points = pc.calculate(depth_frame)
+            pc.map_to(depth_frame)
+
+
         if args.color_mode=='rgb8':
             color_image = cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR)
         if args.outdir:
@@ -152,10 +160,21 @@ if __name__ == "__main__":
             filename_rgb=os.path.join(args.outdir,f'rgb/{frame_i}.png')
             cv2.imwrite(filename_depth,depth_image)
             cv2.imwrite(filename_rgb,color_image)
+            if args.pointcloud:
+                # Save as ply extension is very heavy
+                # filename_pcd=os.path.join(args.outdir,f'pcd/{frame_i}.ply')
+                # points.export_to_ply(filename_pcd, depth_frame)
+                # Save Pointcloud data as numpy arrays
+                filename_pcd=os.path.join(args.outdir,f'pcd/{frame_i}.npy')
+                v, t = points.get_vertices(), points.get_texture_coordinates()
+                verts = np.asanyarray(v).view(np.float32).reshape(-1, 3)  # xyz
+                texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
+                with open(filename_pcd, 'wb') as f:
+                    np.save(f,verts)
+                    np.save(f,texcoords)
+
             associations.write(str(frame_i) + ' depth/' + str(frame_i) + '.png ' + str(frame_i) + ' rgb/' + str(frame_i) + '.png\n')
-            # import pdb; pdb.set_trace()
-            # check_depth=cv2.imread(filename_depth,cv2.IMREAD_UNCHANGED)
-            # print((depth_image-check_depth).abs().sum())
+
 
         if args.show:
             # Remove background - Set pixels further than clipping_distance to grey
