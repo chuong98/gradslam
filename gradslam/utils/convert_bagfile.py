@@ -34,7 +34,6 @@ def parse_args():
     parser.add_argument("--num_frames", type=int, default=None, 
                         help="Number of frames to stream. Will stream all data if None.")
     parser.add_argument("--outdir", type=str, default=None, help="Output directory")
-    parser.add_argument("--trajectory", type=str, default=0, help="Trajectory number")
     parser.add_argument("--show", action='store_true', help='show the video')
 
     # Parse the command line arguments to an object
@@ -86,27 +85,34 @@ def setup_pipeline(args):
     align_to = rs.stream.depth if args.align=='to_depth' else rs.stream.color
     align = rs.align(align_to)
 
-    return pipeline, align, clipping_distance
+    # Get camera intrinsics
+    intrinsics = rs.video_stream_profile(profile.get_stream(rs.stream.depth)).get_intrinsics()
+
+    return pipeline, align, clipping_distance, intrinsics
 
 if __name__ == "__main__":
     args = parse_args()
 
     # Setup camera
-    pipeline, align, clipping_distance = setup_pipeline(args)
+    pipeline, align, clipping_distance, intrinsics = setup_pipeline(args)
 
     if args.outdir:
         if not os.path.exists(args.outdir):
             os.makedirs(args.outdir,exist_ok=True)
 
-        datadir = os.path.join(args.outdir, 'living_room_traj' + args.trajectory + '_frei_png')
-        if os.path.exists(datadir):
-            shutil.rmtree(datadir)
+        if os.path.exists(args.outdir):
+            shutil.rmtree(args.outdir)
 
-        os.makedirs(datadir,exist_ok=True)
-        os.makedirs(os.path.join(datadir,'depth'),exist_ok=True)
-        os.makedirs(os.path.join(datadir,'rgb'),exist_ok=True)
-        associations = open(os.path.join(datadir,'associations.txt'), 'w+')
+        os.makedirs(args.outdir,exist_ok=True)
+        os.makedirs(os.path.join(args.outdir,'depth'),exist_ok=True)
+        os.makedirs(os.path.join(args.outdir,'rgb'),exist_ok=True)
+        association_file = open(os.path.join(args.outdir,'associations.txt'), 'w+')
 
+        # Write intrinsics file
+        intrinsic_file = open(os.path.join(args.outdir,'intrinsics.txt'), 'w+')
+        intrinsic_file.write(f'{intrinsics.fx} {intrinsics.fy} {intrinsics.ppx} {intrinsics.ppy}')
+        intrinsic_file.close()
+        
     # Streaming loop
     frame_i=0
     # progress = ProgressBar(task_num=args.num_frames if args.num_frames else 1e3)
@@ -127,12 +133,12 @@ if __name__ == "__main__":
         color_image = np.asanyarray(color_frame.get_data())
         if args.color_mode=='rgb8':
             color_image = cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR)
-        if datadir:
-            filename_depth=os.path.join(datadir,f'depth/{frame_i}.png')
-            filename_rgb=os.path.join(datadir,f'rgb/{frame_i}.png')
+        if args.outdir:
+            filename_depth=os.path.join(args.outdir,f'depth/{frame_i}.png')
+            filename_rgb=os.path.join(args.outdir,f'rgb/{frame_i}.png')
             cv2.imwrite(filename_depth,depth_image)
             cv2.imwrite(filename_rgb,color_image)
-            associations.write(str(frame_i) + ' depth/' + str(frame_i) + '.png ' + str(frame_i) + ' rgb/' + str(frame_i) + '.png\n')
+            association_file.write(str(frame_i) + ' depth/' + str(frame_i) + '.png ' + str(frame_i) + ' rgb/' + str(frame_i) + '.png\n')
             # import pdb; pdb.set_trace()
             # check_depth=cv2.imread(filename_depth,cv2.IMREAD_UNCHANGED)
             # print((depth_image-check_depth).abs().sum())
@@ -166,4 +172,4 @@ if __name__ == "__main__":
             progress.file.flush()
         progress.update()
 
-    associations.close()
+    association_file.close()

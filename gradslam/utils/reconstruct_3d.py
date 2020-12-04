@@ -4,7 +4,6 @@ import numpy as np
 import os
 import torch
 from gradslam import Pointclouds, RGBDImages
-from gradslam.datasets import ICL
 from gradslam.slam import PointFusion
 from torch.utils.data import DataLoader
 import argparse
@@ -13,7 +12,7 @@ device = torch.device("cuda:1" if (torch.cuda.is_available()) else "cpu")
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--icl_path", type=str)
-    parser.add_argument("--seqlen", type=int, default=20)
+    parser.add_argument("--seqlen", type=int, default=10)
     parser.add_argument("--width", type=int, default=320)
     parser.add_argument("--height", type=int, default=240)
     parser.add_argument("--batch_size", type=int, default=2)
