@@ -1,6 +1,7 @@
 import os
 import warnings
 from typing import Optional, Union
+import json
 
 import cv2
 import imageio
@@ -27,7 +28,7 @@ class Realsense(data.Dataset):
 
     Examples::
 
-        >>> dataset = Realsense("path-to-Realsense-dataset", seqlen=20, width=320, height=240)
+        >>> dataset = Realsense("path-to-Realsense-data", seqlen=20, width=320, height=240)
         >>> loader = DataLoader(dataset=dataset, batch_size=2)
         >>> colors, depths, intrinsics = next(iter(loader))
 
@@ -98,8 +99,11 @@ class Realsense(data.Dataset):
         self.depthfiles = depthfiles
 
         # Camera intrinsics matrix
-        fx, fy, ppx, ppy  = open(os.path.join(basedir, 'intrinsics.txt')).read().split()
-        self.intrinsics = torch.tensor([[float(fx), 0, float(ppx), 0], [0, -float(fy), float(ppy), 0], [0, 0, 1, 0], [0, 0, 0, 1]]).unsqueeze(0)
+        intrinsic_file = open(os.path.join(basedir, 'intrinsics.json'))
+        intrinsics = json.load(intrinsic_file)
+        fx, fy, ppx, ppy = intrinsics['fx'], intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy']
+        
+        self.intrinsics = torch.tensor([[fx, 0, ppx, 0], [0, -fy, ppy, 0], [0, 0, 1, 0], [0, 0, 0, 1]]).unsqueeze(0)
 
         # Scaling factor for depth images
         self.scaling_factor = 5000.0
