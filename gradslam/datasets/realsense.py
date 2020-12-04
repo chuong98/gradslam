@@ -22,9 +22,12 @@ class Realsense(data.Dataset):
        
         ├── Realsense
         │   ├── depth/
+        │   ├── pcd/
         │   ├── rgb/
         │   ├── associations.txt
-        │   └── intrinsics.txt
+        │   ├── color_intrinsics.json
+        │   ├── depth_intrinsics.json
+        │   └── intrinsics.json
 
     Examples::
 
@@ -102,7 +105,7 @@ class Realsense(data.Dataset):
         intrinsic_file = open(os.path.join(basedir, 'intrinsics.json'))
         intrinsics = json.load(intrinsic_file)
         fx, fy, ppx, ppy = intrinsics['fx'], intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy']
-        
+
         self.intrinsics = torch.tensor([[fx, 0, ppx, 0], [0, -fy, ppy, 0], [0, 0, 1, 0], [0, 0, 0, 1]]).unsqueeze(0)
 
         # Scaling factor for depth images
