@@ -10,9 +10,6 @@ from gradslam.core.geometry.geometryutils import relative_transformation
 from torch.utils import data
 
 from . import data_utils
-
-from .builder import DATASETS
-@DATASETS.register_module()
 class ICL(data.Dataset):
     r"""A torch Dataset for loading in `the ICL-NUIM dataset <https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html>`_.
     Will fetch sequences of rgb images, depth maps, intrinsics matrix, poses, frame to frame relative transformations
