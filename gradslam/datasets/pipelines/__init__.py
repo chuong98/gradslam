@@ -3,3 +3,4 @@ from .compose import Compose
 from .formating import *
 from .loading import *
 from .transform import *
+from .sequence import *

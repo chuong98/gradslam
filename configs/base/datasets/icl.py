@@ -1,14 +1,26 @@
-img_norm_cfg = dict(
-    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-train_pipeline = [
-    dict(type='LoadSeqImageFromFile'),
-    dict(type='LoadSeqDepthFromFile'),
-    dict(type='Resize', img_scale=(1333, 800), keep_ratio=True),
-    dict(type='Normalize', **img_norm_cfg),
-    dict(type='Pad', size_divisor=32),
-    dict(type='SegRescale', scale_factor=1 / 8),
-    dict(type='DefaultFormatBundle'),
+pipeline = [
+    dict(type='ColorSeqFormatBundle'),
+    dict(type='DepthSeqFormatBundle',scaling_factor=5000),
+    dict(type='PoseSeqFormatBundle'),
+    dict(type='HomoTransformSeqFormatBundle'),
     dict(
         type='Collect',
-        keys=['img', 'gt_bboxes', 'gt_labels', 'gt_masks', 'gt_semantic_seg']),
+        keys=['color_seq','depth_seq','intrinsics']),
 ]
+data_root='/data/ICL/living_room_traj1_frei_png/'
+dataset_type='ICLDataset'
+data=dict(
+    samples_per_gpu=2,
+    workers_per_gpu=2,
+    train=dict(
+        type=dataset_type,
+        data_root= data_root,
+        ann_file=data_root + 'associations.txt',
+        pose_file=data_root + 'livingRoom1n.gt.sim',
+        img_prefix='',
+        depth_prefix='',
+        pipeline=pipeline,
+        resize=None,
+        seqlen=4,
+    )
+)

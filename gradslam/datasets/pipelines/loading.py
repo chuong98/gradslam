@@ -2,9 +2,7 @@ import os.path as osp
 
 import mmcv
 import numpy as np
-import pycocotools.mask as maskUtils
 
-from mmdet.core import BitmapMasks, PolygonMasks
 from ..builder import PIPELINES
 
 
@@ -96,7 +94,7 @@ class LoadDepthImageFromFile(object):
 
     def __init__(self,
                  to_float32=False,
-                 file_client_args=dict(backend='cv2')):
+                 file_client_args=dict(backend='disk')):
         self.to_float32 = to_float32
         self.file_client_args = file_client_args.copy()
         self.file_client = None
@@ -136,77 +134,6 @@ class LoadDepthImageFromFile(object):
                     f'to_float32={self.to_float32}, '
                     f'file_client_args={self.file_client_args})')
         return repr_str
-
-@PIPELINES.register_module()
-class LoadSeqImageFromFile(LoadImageFromFile):
-    def __call__(self, results):
-        """Call functions to load image and get image meta information.
-
-        Args:
-            results (dict): Result dict from :obj:`mmdet.CustomDataset`.
-
-        Returns:
-            dict: The dict contains loaded image and meta information.
-        """
-
-        if self.file_client is None:
-            self.file_client = mmcv.FileClient(**self.file_client_args)
-
-        if results['img_prefix'] is not None:
-            filenames = [osp.join(results['img_prefix'],fn) for fn in results['img_info']['filenames']]
-        else:
-            filenames = results['img_info']['filenames']
-
-        imgs = []
-        for fn in filenames:
-            img_bytes = self.file_client.get(fn)
-            img = mmcv.imfrombytes(img_bytes, flag=self.color_type)
-            if self.to_float32:
-                img = img.astype(np.float32)
-            imgs.append(img)
-        results['filenames'] = filenames
-        results['ori_filenames'] = results['img_info']['filenames']
-        results['imgs'] = imgs
-        results['img_shape'] = imgs[0].shape
-        results['ori_shape'] = imgs[0].shape
-        results['img_fields'] = ['imgs']
-        return results
-
-@PIPELINES.register_module()
-class LoadSeqDepthImageFromFile(LoadDepthImageFromFile):
-    def __call__(self, results):
-        """Call functions to load image and get image meta information.
-
-        Args:
-            results (dict): Result dict from :obj:`mmdet.CustomDataset`.
-
-        Returns:
-            dict: The dict contains loaded image and meta information.
-        """
-
-        if self.file_client is None:
-            self.file_client = mmcv.FileClient(**self.file_client_args)
-
-        if results['img_prefix'] is not None:
-            filenames = [osp.join(results['img_prefix'],fn) for fn in
-                                results['img_info']['depth_filenames']]
-        else:
-            filenames = results['img_info']['depth_filenames']
-
-        imgs=[]
-        for fn in filenames:
-            img_bytes = self.file_client.get(fn)
-            img = mmcv.imfrombytes(img_bytes, flag='unchanged')
-            if self.to_float32:
-                img = img.astype(np.float32)
-            imgs.append(imgs)
-
-        results['depth_filenames'] = filenames
-        results['ori_depth_filenames'] = results['img_info']['depth_filenames']
-        results['depth_imgs'] = imgs
-        results['depth_shape'] = imgs[0].shape
-        return results
-
 @PIPELINES.register_module()
 class LoadImageFromWebcam(LoadImageFromFile):
     """Load an image from webcam.
@@ -237,7 +164,6 @@ class LoadImageFromWebcam(LoadImageFromFile):
         results['ori_shape'] = img.shape
         results['img_fields'] = ['img']
         return results
-
 
 @PIPELINES.register_module()
 class LoadMultiChannelImageFromFiles(object):

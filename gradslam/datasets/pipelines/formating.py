@@ -235,61 +235,6 @@ class DefaultFormatBundle(object):
         return self.__class__.__name__
 
 @PIPELINES.register_module()
-class SeqDefaultFormatBundle(object):
-    def __call__(self, results):
-        """Call function to transform and format common fields in results.
-
-        Args:
-            results (dict): Result dict contains the data to convert.
-
-        Returns:
-            dict: The result dict contains the data that is formatted with \
-                default bundle.
-        """
-
-        if 'imgs' in results:
-            imgs=[]
-            results = self._add_default_meta_keys(results)
-            for img in results['imgs']:
-                if len(img.shape) < 3:
-                    img = np.expand_dims(img, -1)
-                img = np.ascontiguousarray(img.transpose(2, 0, 1))
-                imgs.append(to_tensor(img))
-            results['imgs'] = DC(imgs, stack=True)
-
-        if 'depth_imgs' in results:
-            imgs=[]
-            for img in results['depth_imgs']:
-                imgs.append(to_tensor(img[None,...]))
-            results['depth_imgs'] = DC(imgs, stack=True)
-        return results
-
-    def _add_default_meta_keys(self, results):
-        """Add default meta keys.
-
-        We set default meta keys including `pad_shape`, `scale_factor` and
-        `img_norm_cfg` to avoid the case where no `Resize`, `Normalize` and
-        `Pad` are implemented during the whole pipeline.
-
-        Args:
-            results (dict): Result dict contains the data to convert.
-
-        Returns:
-            results (dict): Updated result dict contains the data to convert.
-        """
-        img = results['imgs'][0]
-        results.setdefault('pad_shape', img.shape)
-        results.setdefault('scale_factor', 1.0)
-        num_channels = 1 if len(img.shape) < 3 else img.shape[2]
-        results.setdefault(
-            'img_norm_cfg',
-            dict(
-                mean=np.zeros(num_channels, dtype=np.float32),
-                std=np.ones(num_channels, dtype=np.float32),
-                to_rgb=False))
-        return results
-
-@PIPELINES.register_module()
 class Collect(object):
     """Collect data from the loader relevant to the specific task.
 
@@ -330,9 +275,7 @@ class Collect(object):
 
     def __init__(self,
                  keys,
-                 meta_keys=('filename', 'ori_filename', 'ori_shape',
-                            'img_shape', 'pad_shape', 'scale_factor', 'flip',
-                            'flip_direction', 'img_norm_cfg')):
+                 meta_keys=('resize','framename')):
         self.keys = keys
         self.meta_keys = meta_keys
 
@@ -362,7 +305,6 @@ class Collect(object):
     def __repr__(self):
         return self.__class__.__name__ + \
             f'(keys={self.keys}, meta_keys={self.meta_keys})'
-
 
 @PIPELINES.register_module()
 class WrapFieldsToLists(object):
