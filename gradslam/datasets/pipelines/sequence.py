@@ -14,7 +14,7 @@ from gradslam.core.geometry.geometryutils import relative_transformation
 class ColorSeqFormatBundle(object):
     def __init__(self, 
                 normalize_color=True,
-                channels_first=True,
+                channels_first=False,
                 to_float32=True,
                 file_client_args=dict(backend='disk') ):
         self.normalize_color = normalize_color
@@ -49,7 +49,7 @@ class ColorSeqFormatBundle(object):
             color = to_tensor(color)
             color_seq.append(color)
         color_seq = torch.stack(color_seq, 0).float()
-        results['color_seq'] = DC(color_seq,stack=True)
+        results['color_seq'] = DC(color_seq,stack=False)
         return results
 
     def _load_img(self,filename):
@@ -95,7 +95,7 @@ class ColorSeqFormatBundle(object):
 class DepthSeqFormatBundle(object):
     def __init__(self, 
                 scaling_factor=1, 
-                channels_first=True,
+                channels_first=False,
                 to_float32=True,
                 file_client_args=dict(backend='disk')):
         self.scaling_factor = scaling_factor
@@ -117,7 +117,7 @@ class DepthSeqFormatBundle(object):
             depth = to_tensor(depth)
             depth_seq.append(depth)
         depth_seq = torch.stack(depth_seq, 0)
-        results['depth_seq'] = DC(depth_seq,stack=True)
+        results['depth_seq'] = DC(depth_seq,stack=False)
         return results
 
     def _load_img(self,filename):

@@ -5,6 +5,9 @@ from ..builder import MAP
 
 @MAP.register_module()
 class AggregateMap(BaseMap):
+    """ Args:
+        inplace (bool): Can optionally update the pointclouds and live_frame poses in-place. Default: False
+    """
     def __init__(self, inplace=True):
         self.inplace=inplace
 
@@ -30,7 +33,7 @@ class AggregateMap(BaseMap):
                     type(pointclouds)
                 )
             )
-        if not isinstance(live_frame, live_frame):
+        if not isinstance(live_frame, RGBDImages):
             raise TypeError(
                 "Expected live_frame to be of type gradslam.RGBDImages. Got {0}.".format(
                     type(live_frame)

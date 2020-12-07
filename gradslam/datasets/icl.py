@@ -27,7 +27,7 @@ class ICLDataset(CustomDataset):
     def load_annotations(self):
         super().load_annotations()
         associate_file = self.ann_files['associate_file']
-        self.pose_file = self.ann_files['gt_pose']
+        self.pose_file = self.ann_files.get('gt_pose',None)
         traj_colorfiles, traj_depthfiles = [], []
         traj_poselinenums, traj_framenames = [], []
         if self.pose_file:

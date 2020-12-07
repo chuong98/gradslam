@@ -28,9 +28,9 @@ def build(cfg, registry, default_args=None):
         return build_from_cfg(cfg, registry, default_args)
 
 
-def build_slam(cfg):
+def build_slam(cfg, train_cfg=None, test_cfg=None):
     """Build slam."""
-    return build(cfg, SLAM)
+    return build(cfg, SLAM, dict(train_cfg=train_cfg, test_cfg=test_cfg))
 
 
 def build_odometry(cfg):

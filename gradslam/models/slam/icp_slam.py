@@ -33,7 +33,7 @@ class ICPSLAM(BaseSLAM):
                         dist_thr = None, lambda_max = 2.0, 
                         B = 1.0, B2 = 1.0, nu = 200.0),
         map_cfg=dict(type='AggregateMap', inplace=True),
-        device= None,
+        *args,**kwargs
     ):
-        super().__init__(odom_cfg,map_cfg,device)
+        super().__init__(odom_cfg,map_cfg, *args,**kwargs)
         

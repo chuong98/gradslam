@@ -81,7 +81,7 @@ class GradICPOdometry(PCLOdometry):
                 initial_transform,
                 numiters=self.numiters,
                 damp=self.damp,
-                dist_thresh=self.dist_thresh,
+                dist_thresh=self.dist_thr,
                 lambda_max=self.lambda_max,
                 B=self.B,
                 B2=self.B2,

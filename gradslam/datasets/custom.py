@@ -1,5 +1,5 @@
 import os.path as osp
-from numpy.lib.arraysetops import isin
+import numpy as np 
 import torch
 from typing import Optional
 from .pipelines.data_utils import scale_intrinsics
@@ -23,6 +23,7 @@ class CustomDataset(Dataset):
         stride: Optional[int] = None,
         start: Optional[int] = None,
         end: Optional[int] = None,
+        test_mode=True
     ):
         super().__init__()
         assert isinstance(ann_files,str) or isinstance(ann_files,dict), \
@@ -73,8 +74,14 @@ class CustomDataset(Dataset):
         self.intrinsics_cfg=intrinsics_cfg
         self.intrinsics = self.build_intrinsics(intrinsics_cfg,resize)
 
+        # set group flag for the sampler
+        self._set_group_flag()
+
         # processing pipeline
         self.pipeline = Compose(pipeline)
+
+        self.test_mode=test_mode
+
 
     def build_intrinsics(self,intrinsic_cfg, resize=None):
         intrinsics = torch.tensor(
@@ -88,8 +95,8 @@ class CustomDataset(Dataset):
             width_downsample_ratio=resize[1]/intrinsic_cfg['W']
             intrinsics = scale_intrinsics(
                 intrinsics, height_downsample_ratio, width_downsample_ratio
-            ).unsqueeze(0)
-        return intrinsics
+            )
+        return intrinsics.unsqueeze(0)
 
     def load_annotations(self):
         """Load annotation from annotation file. Customize for each dataset"""
@@ -150,7 +157,14 @@ class CustomDataset(Dataset):
                     framename=framename,
                     )
 
-        
+    def _set_group_flag(self):
+        """Set flag according to image aspect ratio.
+        Images with aspect ratio greater than 1 will be set as group 1,
+        otherwise group 0.
+        """
+        # For PCL dataset, all images are captured by the same camera, so they have same
+        self.flag = np.zeros(len(self), dtype=np.uint8)
+  
 
     
     

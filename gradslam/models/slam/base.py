@@ -16,14 +16,16 @@ class BaseSLAM(nn.Module):
         self,
         odom_cfg,
         map_cfg,
-        device=None,
+        train_cfg=None,
+        test_cfg=None,
     ):
         super().__init__()
         self.odom_cfg = odom_cfg
+        self.gt_odom = odom_cfg['type']=='GroundTruthOdometry'
         self.odom = build_odometry(odom_cfg)
         self.map = build_map(map_cfg)
-        device = torch.device(device) if device is not None else torch.device("cpu")
-        self.device = torch.Tensor().to(device).device
+        self.train_cfg=train_cfg
+        self.test_cfg=test_cfg
 
     def forward(self, seq_metas, color_seq, depth_seq,intrinsics, gt_pose=None, **kwargs):
         r"""Builds global map pointclouds from a batch of input RGBDImages with a batch size
@@ -41,29 +43,28 @@ class BaseSLAM(nn.Module):
         Shape:
             - poses: :math:`(B, L, 4, 4)`
         """
-        # if not isinstance(frames, RGBDImages):
-        #     raise TypeError(
-        #         "Expected frames to be of type gradslam.RGBDImages. Got {0}.".format(
-        #             type(frames)
-        #         )
-        #     )
+        if isinstance(color_seq,list):
+            color_seq = torch.cat(color_seq,dim=0)
+        if isinstance(depth_seq,list):
+            depth_seq = torch.cat(depth_seq,dim=0)
+
+        device = color_seq.get_device() if torch.cuda.is_available() else torch.device("cpu")
         frames= RGBDImages(color_seq,depth_seq,intrinsics,gt_pose)
-        pointclouds = Pointclouds(device=self.device)
+        pointclouds = Pointclouds(device=device)
         batch_size, seq_len = frames.shape[:2]
-        recovered_poses = torch.empty(batch_size, seq_len, 4, 4).to(self.device)
+        recovered_poses = torch.empty(batch_size, seq_len, 4, 4).to(device)
         prev_frame = None
         for s in range(seq_len):
-            live_frame = frames[:, s].to(self.device)
+            live_frame = frames[:, s].to(device)
             if s == 0 and live_frame.poses is None:
                 live_frame.poses = (
-                    torch.eye(4, dtype=torch.float, device=self.device)
+                    torch.eye(4, dtype=torch.float, device=device)
                     .view(1, 1, 4, 4)
                     .repeat(batch_size, 1, 1, 1)
                 )
             pointclouds, live_frame.poses = self.step(
-                pointclouds, live_frame, prev_frame, inplace=True
-            )
-            prev_frame = live_frame if self.odom != "gt" else None
+                pointclouds, live_frame, prev_frame)
+            prev_frame = None if self.gt_odom else live_frame
             recovered_poses[:, s] = live_frame.poses[:, 0]
         return pointclouds, recovered_poses
 
@@ -72,7 +73,6 @@ class BaseSLAM(nn.Module):
         pointclouds: Pointclouds,
         live_frame: RGBDImages,
         prev_frame: Optional[RGBDImages] = None,
-        inplace: bool = False,
     ):
         r"""Updates global map pointclouds with a SLAM step on `live_frame`.
         If `prev_frame` is not None, computes the relative transformation between `live_frame`
@@ -86,7 +86,7 @@ class BaseSLAM(nn.Module):
             prev_frame (gradslam.RGBDImages or None): Input batch of previous frames (at time step :math:`t-1`).
                 Must have sequence length of 1. If None, will (skip calling odometry provider and) use the pose
                 from `live_frame`. Default: None
-            inplace (bool): Can optionally update the pointclouds and live_frame poses in-place. Default: False
+            
 
         Returns:
             tuple: tuple containing:
@@ -97,14 +97,9 @@ class BaseSLAM(nn.Module):
         Shape:
             - poses: :math:`(B, 1, 4, 4)`
         """
-        if not isinstance(live_frame, RGBDImages):
-            raise TypeError(
-                "Expected live_frame to be of type gradslam.RGBDImages. Got {0}.".format(
-                    type(live_frame)
-                )
-            )
         live_frame.poses = self.odom.localize(pointclouds, live_frame, prev_frame)
-        pointclouds = self.map.update_map(pointclouds, live_frame, inplace)
+        import pdb; pdb.set_trace()
+        pointclouds = self.map.update_map(pointclouds, live_frame)
         return pointclouds, live_frame.poses
 
 
