@@ -106,7 +106,7 @@ class Realsense(data.Dataset):
         intrinsics = json.load(intrinsic_file)
         fx, fy, ppx, ppy = intrinsics['fx'], intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy']
 
-        self.intrinsics = torch.tensor([[fx, 0, ppx, 0], [0, -fy, ppy, 0], [0, 0, 1, 0], [0, 0, 0, 1]]).unsqueeze(0)
+        self.intrinsics = torch.tensor([[fx, 0, ppx, 0], [0, -fy, ppy, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
         # Scaling factor for depth images
         self.scaling_factor = 5000.0
@@ -203,6 +203,13 @@ class Realsense(data.Dataset):
         depth_seq = torch.stack(depth_seq, 0).float()
         output.append(depth_seq)
 
-        output.append(self.intrinsics)
+        # Scale intrinsics matrix
+        origin_height, origin_width, _ = np.asarray(imageio.imread(color_seq_path[i]), dtype=float).shape
+        height_downsample_ratio = self.height / origin_height
+        width_downsample_ratio = self.width / origin_width
+
+        output.append(datautils.scale_intrinsics(
+            self.intrinsics, height_downsample_ratio, width_downsample_ratio
+        ).unsqueeze(0))
 
         return tuple(output)
