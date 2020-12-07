@@ -1,4 +1,5 @@
 import os.path as osp
+from numpy.lib.arraysetops import isin
 import torch
 from typing import Optional
 from .pipelines.data_utils import scale_intrinsics
@@ -10,7 +11,7 @@ from .pipelines import Compose
 class CustomDataset(Dataset):
     def __init__(
         self,
-        ann_file,
+        ann_files,
         pipeline,
         data_root=None,
         img_prefix='',
@@ -24,19 +25,28 @@ class CustomDataset(Dataset):
         end: Optional[int] = None,
     ):
         super().__init__()
-        self.ann_file = ann_file
+        assert isinstance(ann_files,str) or isinstance(ann_files,dict), \
+            'ann_files must be a string path to a single file, or a dict of a set of path files' 
+        self.ann_files= ann_files
         self.data_root = data_root
         self.img_prefix = img_prefix
         self.depth_prefix = depth_prefix
 
         # join paths if data_root is specified
         if self.data_root is not None:
-            if not osp.isabs(self.ann_file):
-                self.ann_file = osp.join(self.data_root, self.ann_file)
+            def to_abs_path(file_path):
+                return osp.join(self.data_root,file_path)
             if not (self.img_prefix is None or osp.isabs(self.img_prefix)):
-                self.img_prefix = osp.join(self.data_root, self.img_prefix)
+                self.img_prefix = to_abs_path(self.img_prefix)
             if not (self.depth_prefix is None or osp.isabs(self.depth_prefix)):
-                self.depth_prefix = osp.join(self.data_root, self.depth_prefix)
+                self.depth_prefix = to_abs_path(self.depth_prefix)
+            if isinstance(self.ann_files,str):
+                if not osp.isabs(self.ann_files):
+                    self.ann_files = to_abs_path(self.ann_files)
+            else:
+                for k,v in self.ann_files.items():
+                    if not osp.isabs(v):
+                        self.ann_files[k] = to_abs_path(v)
 
         # sequence data info
         dilation = 0 if dilation is None else dilation

@@ -163,7 +163,7 @@ class PoseSeqFormatBundle(object):
         pose_seq = [to_tensor(pose) for pose in results['poses']]
         pose_seq = torch.stack(pose_seq, 0).float()
         pose_seq = self._preprocess_poses(pose_seq)
-        results['pose_seq']=DC(pose_seq)
+        results['gt_pose_seq']=DC(pose_seq)
         return results
 
     def _preprocess_poses(self, poses: torch.Tensor):
@@ -192,5 +192,5 @@ class HomoTransformSeqFormatBundle(object):
         transform_seq = poses_to_transforms(results['poses'])
         transform_seq = [to_tensor(x).float() for x in transform_seq]
         transform_seq = torch.stack(transform_seq, 0).float()
-        results['transform_seq']=transform_seq
+        results['gt_transf_seq']=transform_seq
         return results

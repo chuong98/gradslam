@@ -25,7 +25,7 @@ class BaseSLAM(nn.Module):
         device = torch.device(device) if device is not None else torch.device("cpu")
         self.device = torch.Tensor().to(device).device
 
-    def forward(self, frames: RGBDImages):
+    def forward(self, seq_metas, color_seq, depth_seq,intrinsics, gt_pose=None, **kwargs):
         r"""Builds global map pointclouds from a batch of input RGBDImages with a batch size
         of :math:`B` and sequence length of :math:`L`.
 
@@ -41,12 +41,13 @@ class BaseSLAM(nn.Module):
         Shape:
             - poses: :math:`(B, L, 4, 4)`
         """
-        if not isinstance(frames, RGBDImages):
-            raise TypeError(
-                "Expected frames to be of type gradslam.RGBDImages. Got {0}.".format(
-                    type(frames)
-                )
-            )
+        # if not isinstance(frames, RGBDImages):
+        #     raise TypeError(
+        #         "Expected frames to be of type gradslam.RGBDImages. Got {0}.".format(
+        #             type(frames)
+        #         )
+        #     )
+        frames= RGBDImages(color_seq,depth_seq,intrinsics,gt_pose)
         pointclouds = Pointclouds(device=self.device)
         batch_size, seq_len = frames.shape[:2]
         recovered_poses = torch.empty(batch_size, seq_len, 4, 4).to(self.device)

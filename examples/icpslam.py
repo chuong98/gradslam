@@ -6,8 +6,8 @@ from torch.utils.data import DataLoader
 
 from gradslam.datasets.icl import ICL
 from gradslam.datasets.tum import TUM
-from gradslam.slam.icpslam import ICPSLAM
-from gradslam.structures.rgbdimages import RGBDImages
+from gradslam.models.slam.icp_slam import ICPSLAM
+from gradslam.core.structures.rgbdimages import RGBDImages
 
 parser = ArgumentParser(formatter_class=RawTextHelpFormatter)
 parser.add_argument(

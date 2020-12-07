@@ -11,29 +11,29 @@ class ICLDataset(CustomDataset):
         data_root='/data/ICL/living_room_traj1_frei_png/'
         ICLDataset(
             data_root= data_root,
-            ann_file=data_root + 'associations.txt',
-            pose_file=data_root + 'livingRoom1n.gt.sim',
+            ann_files=dict(associate_file='associations.txt',
+                            gt_pose='livingRoom1n.gt.sim'),
             img_prefix='',
             depth_prefix='',
         )
     """
     def __init__(self, 
-                pose_file=None,
                 *args, **kwargs):
         # preprocess trajectories to be a tuple or None
-        self.pose_file=pose_file
         intrinsic_cfg=dict(fx=481.2,fy=-480.0,cx=319.5,cy=239.5,H=480,W=640)
         super().__init__(intrinsics_cfg=intrinsic_cfg,
                         *args,**kwargs)
 
     def load_annotations(self):
         super().load_annotations()
+        associate_file = self.ann_files['associate_file']
+        self.pose_file = self.ann_files['gt_pose']
         traj_colorfiles, traj_depthfiles = [], []
         traj_poselinenums, traj_framenames = [], []
         if self.pose_file:
             self.posemetas=[]
         # Load file path for rgb and depth
-        with open(self.ann_file, "r") as f:
+        with open(associate_file, "r") as f:
             lines = f.readlines()
             if self.end is None:
                 self.end = len(lines)
