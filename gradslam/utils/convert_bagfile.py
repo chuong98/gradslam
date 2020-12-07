@@ -110,12 +110,10 @@ def setup_pipeline(args):
 if __name__ == "__main__":
     args = parse_args()
 
-
     if args.outdir:
         if not os.path.exists(args.outdir):
             os.makedirs(args.outdir,exist_ok=True)
 
-        # args.outdir= os.path.join(args.outdir, 'living_room_traj' + args.trajectory + '_frei_png')
         if os.path.exists(args.outdir):
             shutil.rmtree(args.outdir)
 
@@ -137,7 +135,7 @@ if __name__ == "__main__":
 
         # Align the depth frame and color frame
         aligned_frames = align.process(frames)
-        depth_frame = aligned_frames.get_depth_frame() 
+        depth_frame = aligned_frames.get_depth_frame()
         color_frame = aligned_frames.get_color_frame()
         
         if not depth_frame or not color_frame:
@@ -152,14 +150,13 @@ if __name__ == "__main__":
             points = pc.calculate(depth_frame)
             pc.map_to(depth_frame)
 
-
         if args.color_mode=='rgb8':
             color_image = cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR)
         if args.outdir:
             filename_depth=os.path.join(args.outdir,f'depth/{frame_i}.png')
             filename_rgb=os.path.join(args.outdir,f'rgb/{frame_i}.png')
-            cv2.imwrite(filename_depth,depth_image)
-            cv2.imwrite(filename_rgb,color_image)
+            cv2.imwrite(filename_depth, depth_image)
+            cv2.imwrite(filename_rgb, color_image)
             if args.pointcloud:
                 # Save as *.ply extension is very heavy.
                 # filename_pcd=os.path.join(args.outdir,f'pcd/{frame_i}.ply')
