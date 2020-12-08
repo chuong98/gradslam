@@ -158,10 +158,9 @@ if __name__ == "__main__":
             cv2.imwrite(filename_depth, depth_image)
             cv2.imwrite(filename_rgb, color_image)
             if args.pointcloud:
-                # Save as *.ply extension is very heavy.
+                # Save as ply extension is very heavy
                 # filename_pcd=os.path.join(args.outdir,f'pcd/{frame_i}.ply')
                 # points.export_to_ply(filename_pcd, depth_frame)
-
                 # Save Pointcloud data as numpy arrays
                 filename_pcd=os.path.join(args.outdir,f'pcd/{frame_i}.npy')
                 v, t = points.get_vertices(), points.get_texture_coordinates()
